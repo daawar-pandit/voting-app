@@ -4,16 +4,35 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     app = express(),
     server = require('http').Server(app),
-    io = require('socket.io')(server);
+    io = require('socket.io')(server),
+    client = require('prom-client');  
 
 var port = process.env.PORT || 4000;
 
-io.on('connection', function (socket) {
+// Prometheus setup
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });  // Collect default metrics
 
+
+const activeConnections = new client.Gauge({
+  name: 'active_connections',
+  help: 'Number of active WebSocket connections',
+});
+register.registerMetric(activeConnections);
+
+io.on('connection', function (socket) {
+  // Update metric when a new connection is established
+  activeConnections.inc();
+  
   socket.emit('message', { text : 'Welcome!' });
 
   socket.on('subscribe', function (data) {
     socket.join(data.channel);
+  });
+
+  socket.on('disconnect', function () {
+ 
+    activeConnections.dec();
   });
 });
 
@@ -49,7 +68,7 @@ function getVotes(client) {
       io.sockets.emit("scores", JSON.stringify(votes));
     }
 
-    setTimeout(function() {getVotes(client) }, 1000);
+    setTimeout(function() { getVotes(client) }, 1000);
   });
 }
 
@@ -67,11 +86,17 @@ app.use(cookieParser());
 app.use(express.urlencoded());
 app.use(express.static(__dirname + '/views'));
 
+// Serve the main page
 app.get('/', function (req, res) {
   res.sendFile(path.resolve(__dirname + '/views/index.html'));
 });
 
+// Expose Prometheus metrics at /metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.setHeader('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
 server.listen(port, function () {
-  var port = server.address().port;
   console.log('App running on port ' + port);
 });
