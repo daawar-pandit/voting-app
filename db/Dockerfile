@@ -10,7 +10,7 @@ ENV POSTGRES_DB=postgres
 RUN mkdir -p /healthchecks
 
 # Copy your custom health check script into the container
-COPY healthchecks/postgres.sh /healthchecks/postgres.sh
+COPY ../healthchecks/postgres.sh /healthchecks/postgres.sh
 RUN chmod +x /healthchecks/postgres.sh
 
 # Download and install the postgres_exporter
