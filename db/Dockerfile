@@ -14,15 +14,15 @@ RUN apk add --no-cache curl && \
 # Expose PostgreSQL port and the exporter port
 EXPOSE 5432 9187
 
+# Add the health check script and change permissions as root
+COPY postgres.sh /usr/local/bin/postgres.sh
+RUN chmod +x /usr/local/bin/postgres.sh
+
 # Switch to the 'postgres' user to run PostgreSQL as an unprivileged user
 USER postgres
 
 # Configure postgres_exporter to connect to PostgreSQL using environment variables
 ENV DATA_SOURCE_NAME="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB?sslmode=disable"
-
-# Add the health check script
-COPY postgres.sh /usr/local/bin/postgres.sh
-RUN chmod +x /usr/local/bin/postgres.sh
 
 # Default command to run both PostgreSQL and postgres_exporter
 CMD ["sh", "-c", "postgres & /usr/local/bin/postgres_exporter --web.listen-address=:9187"]
