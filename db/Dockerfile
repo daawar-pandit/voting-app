@@ -1,5 +1,10 @@
 FROM postgres:15-alpine
 
+# Set environment variables for PostgreSQL
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=postgres
+
 # Download and install the postgres_exporter
 RUN apk add --no-cache curl && \
     curl -L https://github.com/prometheus-community/postgres_exporter/releases/download/v0.11.1/postgres_exporter-0.11.1.linux-amd64.tar.gz | tar -xz && \
@@ -14,6 +19,10 @@ USER postgres
 
 # Configure postgres_exporter to connect to PostgreSQL using environment variables
 ENV DATA_SOURCE_NAME="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB?sslmode=disable"
+
+# Add the health check script
+COPY postgres.sh /usr/local/bin/postgres.sh
+RUN chmod +x /usr/local/bin/postgres.sh
 
 # Default command to run both PostgreSQL and postgres_exporter
 CMD ["sh", "-c", "postgres & /usr/local/bin/postgres_exporter --web.listen-address=:9187"]
