@@ -24,10 +24,11 @@ active_sessions = Gauge('app_active_sessions', 'Number of active user sessions')
 
 def get_redis():
     if not hasattr(g, 'redis'):
-        g.redis = Redis(host="redis", db=0, socket_timeout=5)
+        # Updated host to connect using Cloud Map namespace and service name
+        g.redis = Redis(host="redis.voting-app.local", db=0, socket_timeout=5)
     return g.redis
 
-@app.route("/", methods=['POST','GET'])
+@app.route("/", methods=['POST', 'GET'])
 def hello():
     voter_id = request.cookies.get('voter_id')
     if not voter_id:

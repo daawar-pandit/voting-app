@@ -13,7 +13,7 @@ var port = process.env.PORT || 4000;
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });  // Collect default metrics
 
-
+// Define a new Gauge metric for active connections
 const activeConnections = new client.Gauge({
   name: 'active_connections',
   help: 'Number of active WebSocket connections',
@@ -37,7 +37,8 @@ io.on('connection', function (socket) {
 });
 
 var pool = new Pool({
-  connectionString: 'postgres://postgres:postgres@db/postgres'
+  // Updated connection string with ECS hostname
+  connectionString: 'postgres://postgres:postgres@db.voting-app.local/postgres'
 });
 
 async.retry(

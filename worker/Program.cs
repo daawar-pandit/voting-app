@@ -25,8 +25,9 @@ namespace Worker
         {
             try
             {
-                var pgsql = OpenDbConnection("Server=db;Username=postgres;Password=postgres;");
-                var redisConn = OpenRedisConnection("redis");
+                // Updated hostnames for Redis and PostgreSQL
+                var pgsql = OpenDbConnection("Server=db.voting-app.local;Username=postgres;Password=postgres;");
+                var redisConn = OpenRedisConnection("redis.voting-app.local");
                 var redis = redisConn.GetDatabase();
 
                 // Keep alive workaround
@@ -48,7 +49,7 @@ namespace Worker
                     if (redisConn == null || !redisConn.IsConnected)
                     {
                         Console.WriteLine("Reconnecting Redis");
-                        redisConn = OpenRedisConnection("redis");
+                        redisConn = OpenRedisConnection("redis.voting-app.local");
                         redis = redisConn.GetDatabase();
                     }
 
@@ -62,7 +63,7 @@ namespace Worker
                         if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
                         {
                             Console.WriteLine("Reconnecting DB");
-                            pgsql = OpenDbConnection("Server=db;Username=postgres;Password=postgres;");
+                            pgsql = OpenDbConnection("Server=db.voting-app.local;Username=postgres;Password=postgres;");
                         }
                         else
                         { 
