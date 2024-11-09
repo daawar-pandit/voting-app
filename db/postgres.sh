@@ -1,21 +1,31 @@
 #!/bin/bash
 set -eo pipefail
 
-host="$(hostname -i || echo '127.0.0.1')"
+# Define PostgreSQL connection parameters
+host="localhost"  # Use 'localhost' directly to avoid ECS hostname resolution issues
 user="${POSTGRES_USER:-postgres}"
 db="${POSTGRES_DB:-$POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD:-}"
 
 args=(
-	# force postgres to not use the local unix socket (test "external" connectibility)
-	--host "$host"
-	--username "$user"
-	--dbname "$db"
-	--quiet --no-align --tuples-only
+    --host "$host"
+    --username "$user"
+    --dbname "$db"
+    --quiet --no-align --tuples-only
 )
 
-if select="$(echo 'SELECT 1' | psql "${args[@]}")" && [ "$select" = '1' ]; then
-	exit 0
-fi
+# Retry loop to check PostgreSQL health with logging
+for i in {1..5}; do
+    echo "Attempt $i: Checking PostgreSQL health..."
 
+    if select="$(echo 'SELECT 1' | psql "${args[@]}")" && [ "$select" = '1' ]; then
+        echo "Postgres is healthy"
+        exit 0
+    fi
+
+    echo "Postgres is not ready, retrying in 5 seconds..."
+    sleep 5
+done
+
+echo "Postgres health check failed after multiple attempts"
 exit 1

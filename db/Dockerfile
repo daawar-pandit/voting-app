@@ -11,14 +11,10 @@ RUN apk add --no-cache curl && \
     mv postgres_exporter-0.11.1.linux-amd64/postgres_exporter /usr/local/bin && \
     rm -rf postgres_exporter-0.11.1.linux-amd64*
 
-# Initialize PostgreSQL data directory
-RUN mkdir -p /var/lib/postgresql/data && \
-    chown -R postgres:postgres /var/lib/postgresql/data
-
 # Expose PostgreSQL port and the exporter port
 EXPOSE 5432 9187
 
-# Add the health check script, your initialization scripts, and change permissions
+# Add the health check script, initialization scripts, and change permissions
 COPY postgres.sh /usr/local/bin/postgres.sh
 RUN chmod +x /usr/local/bin/postgres.sh
 
@@ -28,5 +24,12 @@ USER postgres
 # Configure postgres_exporter to connect to PostgreSQL using environment variables
 ENV DATA_SOURCE_NAME="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB?sslmode=disable"
 
-# Initialize the database and start PostgreSQL and postgres_exporter
-CMD ["sh", "-c", "initdb -D /var/lib/postgresql/data && postgres -D /var/lib/postgresql/data & /usr/local/bin/postgres_exporter --web.listen-address=:9187"]
+# Start PostgreSQL and postgres_exporter with data directory initialization and pg_hba.conf update
+CMD ["sh", "-c", "\
+    mkdir -p /var/lib/postgresql/data && \
+    chown -R postgres:postgres /var/lib/postgresql/data && \
+    if [ ! -s /var/lib/postgresql/data/PG_VERSION ]; then \
+        initdb -D /var/lib/postgresql/data; \
+        echo 'host all postgres 0.0.0.0/0 trust' >> /var/lib/postgresql/data/pg_hba.conf; \
+    fi && \
+    postgres -D /var/lib/postgresql/data & /usr/local/bin/postgres_exporter --web.listen-address=:9187"]
