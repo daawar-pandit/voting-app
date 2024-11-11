@@ -64,6 +64,7 @@ This isn't an example of a properly architected perfectly designed distributed a
 example of the various types of pieces and languages you might see (queues, persistent data, etc), and how to
 deal with them in Docker at a basic level.
 
+
 ## Deployment to AWS ECS Architecture
 
 ![Blank diagram](https://github.com/user-attachments/assets/df75722f-7de8-4011-9a5c-519aec3005e8)
